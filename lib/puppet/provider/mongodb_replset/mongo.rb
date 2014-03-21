@@ -108,6 +108,30 @@ Puppet::Type.type(:mongodb_replset).provide(:mongo) do
     JSON.parse(output)
   end
 
+  def mongo_nohost_command(command, retries=4)
+    # Allow waiting for mongod to become ready
+    # Wait for 2 seconds initially and double the delay at each retry
+    wait = 2
+    begin
+      output = self.mongo('--quiet', '--eval', "printjson(#{command})")
+      sleep 60
+    rescue Puppet::ExecutionFailure => e
+      if e =~ /Error: couldn't connect to server/ and wait <= 2**max_wait
+        info("Waiting #{wait} seconds for mongod to become available")
+        sleep wait
+        wait *= 2
+        retry
+      else
+        raise
+      end
+    end
+
+    # Dirty hack to remove JavaScript objects
+    output.gsub!(/ISODate\((.+?)\)/, '\1 ')
+    output.gsub!(/Timestamp\((.+?)\)/, '[\1]')
+    JSON.parse(output)
+  end
+
   def master_host
     @resource[:members].each do |host|
       status = self.db_ismaster(host)
@@ -123,8 +147,7 @@ Puppet::Type.type(:mongodb_replset).provide(:mongo) do
   end
 
   def rs_initiate(conf, host)
-    return self.mongo_command("rs.initiate(#{conf})", @resource[:members][0])
-
+    return self.mongo_nohost_command("rs.initiate(#{conf})", @resource[:members][0])
   end
 
   def rs_status(host)
