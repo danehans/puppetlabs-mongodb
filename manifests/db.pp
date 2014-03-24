@@ -12,16 +12,27 @@
 #
 define mongodb::db (
   $user,
+  $auth          = false,
   $password_hash = false,
   $password      = false,
   $roles         = ['dbAdmin'],
   $tries         = 10,
 ) {
 
-  mongodb_database { $name:
-    ensure   => present,
-    tries    => $tries,
-    require  => Class['mongodb::server'],
+  if $auth {
+    mongodb_auth_database { $name:
+      ensure   => present,
+      user     => $user,
+      password => $password,
+      tries    => $tries,
+      require  => Class['mongodb::server'],
+    }
+  } else {
+    mongodb_database { $name:
+      ensure   => present,
+      tries    => $tries,
+      require  => Class['mongodb::server'],
+    }
   }
 
   if $password_hash {
@@ -32,12 +43,22 @@ define mongodb::db (
     fail("Parameter 'password_hash' or 'password' should be provided to mongodb::db.")
   }
 
-  mongodb_user { $user:
-    ensure        => present,
-    password_hash => $hash,
-    database      => $name,
-    roles         => $roles,
-    require       => Mongodb_database[$name],
+  if $auth {
+    mongodb_auth_user { $user:
+      ensure        => present,
+      password      => $password,
+      password_hash => $hash,
+      database      => $name,
+      roles         => $roles,
+      require       => Mongodb_auth_database[$name],
+    }
+  } else {
+    mongodb_user { $user:
+      ensure        => present,
+      password_hash => $hash,
+      database      => $name,
+      roles         => $roles,
+      require       => Mongodb_database[$name],
+    }
   }
-
 }
