@@ -17,6 +17,18 @@ Puppet::Type.newtype(:mongodb_replset) do
     desc "The name of the replicaSet"
   end
 
+  newparam(:auth) do
+    desc "Enable or disable authentication for connecting to Mongo replication sets"
+  end
+
+  newparam(:user) do
+    desc "Username with priviledges to manage Mongo replication sets"
+  end
+
+  newparam(:password) do
+    desc "Password for :user to manage Mongo replication sets"
+  end
+
   newproperty(:members, :array_matching => :all) do
     desc "The replicaSet members"
 

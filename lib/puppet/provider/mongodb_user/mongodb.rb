@@ -17,32 +17,60 @@ Puppet::Type.type(:mongodb_user).provide(:mongodb) do
   end
 
   def create
-    mongo(@resource[:database], '--eval', "db.system.users.insert({user:\"#{@resource[:name]}\", pwd:\"#{@resource[:password_hash]}\", roles: #{@resource[:roles].inspect}})")
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--eval', "db.system.users.insert({user:\'#{@resource[:name]}\', pwd:\"#{@resource[:password_hash]}\", roles: #{@resource[:roles].inspect}})")
+    else
+      mongo(@resource[:database], '--eval', "db.system.users.insert({user:\'#{@resource[:name]}\', pwd:\"#{@resource[:password_hash]}\", roles: #{@resource[:roles].inspect}})")
+    end
   end
 
   def destroy
-    mongo(@resource[:database], '--quiet', '--eval', "db.removeUser(\"#{@resource[:name]}\")")
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--quiet', '--eval', "db.removeUser(\'#{@resource[:name]}\')")
+    else
+      mongo(@resource[:database], '--quiet', '--eval', "db.removeUser(\'#{@resource[:name]}\')")
+    end
   end
 
   def exists?
     block_until_mongodb(@resource[:tries])
-    mongo(@resource[:database], '--quiet', '--eval', "db.system.users.find({user:\"#{@resource[:name]}\"}).count()").strip.eql?('1')
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--quiet', '--eval', "db.system.users.find({user:\'#{@resource[:name]}\'}).count()").strip.eql?('1')
+    else
+      mongo(@resource[:database], '--quiet', '--eval', "db.system.users.find({user:\'#{@resource[:name]}\'}).count()").strip.eql?('1')
+    end
   end
 
   def password_hash
-    mongo(@resource[:database], '--quiet', '--eval', "db.system.users.findOne({user:\"#{@resource[:name]}\"})[\"pwd\"]").strip
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--quiet', '--eval', "db.system.users.findOne({user:\'#{@resource[:name]}\'})[\"pwd\"]").strip
+    else
+      mongo(@resource[:database], '--quiet', '--eval', "db.system.users.findOne({user:\'#{@resource[:name]}\'})[\"pwd\"]").strip
+    end
   end
 
   def password_hash=(value)
-    mongo(@resource[:database], '--quiet', '--eval', "db.system.users.update({user:\"#{@resource[:name]}\"}, { $set: {pwd:\"#{value}\"}})")
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--quiet', '--eval', "db.system.users.update({user:\'#{@resource[:name]}\'}, { $set: {pwd:\"#{value}\"}})")
+    else
+      mongo(@resource[:database], '--quiet', '--eval', "db.system.users.update({user:\'#{@resource[:name]}\'}, { $set: {pwd:\"#{value}\"}})")
+    end
   end
 
   def roles
-    mongo(@resource[:database], '--quiet', '--eval', "db.system.users.findOne({user:\"#{@resource[:name]}\"})[\"roles\"]").strip.split(",").sort
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--quiet', '--eval', "db.system.users.findOne({user:\'#{@resource[:name]}\'})[\"roles\"]").strip.split(",").sort
+    else
+      mongo(@resource[:database], '--quiet', '--eval', "db.system.users.findOne({user:\'#{@resource[:name]}\'})[\"roles\"]").strip.split(",").sort
+    end
   end
 
   def roles=(value)
-    mongo(@resource[:database], '--quiet', '--eval', "db.system.users.update({user:\"#{@resource[:name]}\"}, { $set: {roles: #{@resource[:roles].inspect}}})")
+    if @resource[:auth] == true
+      mongo(@resource[:database], '-u', @resource[:name], '-p', @resource[:password], '--quiet', '--eval', "db.system.users.update({user:\'#{@resource[:name]}\'}, { $set: {roles: #{@resource[:roles].inspect}}})")
+    else
+      mongo(@resource[:database], '--quiet', '--eval', "db.system.users.update({user:\'#{@resource[:name]}\'}, { $set: {roles: #{@resource[:roles].inspect}}})")
+    end
   end
 
 end

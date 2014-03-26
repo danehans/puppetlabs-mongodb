@@ -13,6 +13,14 @@ Puppet::Type.newtype(:mongodb_user) do
     desc "The name of the user."
   end
 
+  newparam(:auth) do
+    desc "Enable or disable authentication for connecting to Mongo."
+  end
+
+  newparam(:password) do
+    desc "The password of the user with priviledges to manage users."
+  end
+
   newparam(:database) do
     desc "The user's target database."
     defaultto do

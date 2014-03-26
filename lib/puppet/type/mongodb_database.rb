@@ -8,6 +8,20 @@ Puppet::Type.newtype(:mongodb_database) do
     newvalues(/^\w+$/)
   end
 
+  newparam(:auth) do
+    desc "Enable or disable authentication."
+  end
+
+  newparam(:user) do
+    desc "The username with priviledges to manage Mongo databases."
+    newvalues(/^\w+$/)
+  end
+
+  newparam(:password) do
+    desc "The password of :user."
+    newvalues(/^\w+$/)
+  end
+
   newparam(:tries) do
     desc "The maximum amount of two second tries to wait MongoDB startup."
     defaultto 10

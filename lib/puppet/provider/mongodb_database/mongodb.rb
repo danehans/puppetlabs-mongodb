@@ -26,7 +26,11 @@ Puppet::Type.type(:mongodb_database).provide(:mongodb) do
 
   def exists?
     block_until_mongodb(@resource[:tries])
+    if @resource[:auth] == true
+    mongo(@resource[:name], "-u", @resource[:user], "-p", @resource[:password], "--quiet", "--eval", "db.getMongo().getDB(\'#{@resource[:name]}\')")
+    else
     mongo("--quiet", "--eval", 'db.getMongo().getDBNames()').split(",").include?(@resource[:name])
+    end
   end
 
 end

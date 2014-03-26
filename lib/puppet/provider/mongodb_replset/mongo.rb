@@ -77,7 +77,11 @@ Puppet::Type.type(:mongodb_replset).provide(:mongo) do
   def members_present
     @resource[:members].select do |host|
       begin
-        self.mongo('--host', host, '--quiet', '--eval', 'db.version()')
+        if @resource[:auth]
+          self.mongo('admin', '--host', host, '-u', @resource[:user], '-p', @resource[:password], '--quiet', '--eval', 'db.version()')
+        else
+          self.mongo('--host', host, '--quiet', '--eval', 'db.version()')
+        end
         true
       rescue Puppet::ExecutionFailure
         false
@@ -90,7 +94,11 @@ Puppet::Type.type(:mongodb_replset).provide(:mongo) do
     # Wait for 2 seconds initially and double the delay at each retry
     wait = 2
     begin
-      output = self.mongo('--quiet', '--host', host, '--eval', "printjson(#{command})")
+      if @resource[:auth]
+        output = self.mongo('admin', '--quiet', '--host', host, '-u', @resource[:user], '-p', @resource[:password], '--eval', "printjson(#{command})")
+      else
+        output = self.mongo('--quiet', '--host', host, '--eval', "printjson(#{command})")
+      end
     rescue Puppet::ExecutionFailure => e
       if e =~ /Error: couldn't connect to server/ and wait <= 2**max_wait
         info("Waiting #{wait} seconds for mongod to become available")
